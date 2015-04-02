@@ -1,3 +1,3 @@
 # Baconbot
 
-Requires Python 3.2+
+Requires Python 3.4.2+
