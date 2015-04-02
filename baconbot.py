@@ -21,21 +21,3 @@ class AlarmPlugin:
         self.bot.privmsg(target, 'ALARM INITIATED!')
         yield from asyncio.sleep(time)
         self.bot.privmsg(target, 'ALARM OFF!')
-
-
-BOT = irc3.IrcBot(
-    nick='baconbot',
-    autojoins=['#baconbot'],
-    host='irc.0x90.dk',
-    port=6697,
-    ssl=True,
-    includes=[
-        'irc3.plugins.core',
-        'irc3.plugins.command',
-        'irc3.plugins.human',
-        __name__,
-    ],
-)
-
-if __name__ == '__main__':
-    BOT.run()
