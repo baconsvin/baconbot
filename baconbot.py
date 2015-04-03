@@ -14,21 +14,6 @@ class AlarmPlugin:
         self.bot = bot
 
     @command
-    def love(self, mask, target, args):
-        """Love command
-        %%love [ARG]
-        """
-        arg = args.get('ARG', None)
-        if arg:
-            logging.info('Starting love for {} seconds'.format(arg))
-            # self.bot.notice(mask.nick, 'Så er der kærlighed i {} sekunder!'.format(arg))
-        self.bot.loop.create_task(
-            self.process_maybe_timed_command(
-                target, 4, arg
-            )
-        )
-
-    @command
     def alarm(self, mask, target, args):
         """Alarm command
         %%alarm [ARG]
@@ -40,6 +25,36 @@ class AlarmPlugin:
         self.bot.loop.create_task(
             self.process_maybe_timed_command(
                 target, 1, arg
+            )
+        )
+
+    @command
+    def disco(self, mask, target, args):
+        """Disco command
+        %%disco [ARG]
+        """
+        arg = args.get('ARG', None)
+        if arg:
+            logging.info('Starting alarm for {} seconds'.format(arg))
+            # self.bot.notice(mask.nick, 'DiScO dAsCo I {} SEKUNDER!'.format(arg))
+        self.bot.loop.create_task(
+            self.process_maybe_timed_command(
+                target, 2, arg
+            )
+        )
+
+    @command
+    def love(self, mask, target, args):
+        """Love command
+        %%love [ARG]
+        """
+        arg = args.get('ARG', None)
+        if arg:
+            logging.info('Starting love for {} seconds'.format(arg))
+            # self.bot.notice(mask.nick, 'Så er der kærlighed i {} sekunder!'.format(arg))
+        self.bot.loop.create_task(
+            self.process_maybe_timed_command(
+                target, 4, arg
             )
         )
 
