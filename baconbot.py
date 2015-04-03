@@ -35,7 +35,7 @@ class AlarmPlugin:
         """
         arg = args.get('ARG', None)
         if arg:
-            logging.info('Starting alarm for {} seconds'.format(arg))
+            logging.info('Starting disco for {} seconds'.format(arg))
             # self.bot.notice(mask.nick, 'DiScO dAsCo I {} SEKUNDER!'.format(arg))
         self.bot.loop.create_task(
             self.process_maybe_timed_command(
