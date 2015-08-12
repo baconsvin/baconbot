@@ -3,78 +3,46 @@ from datetime import datetime
 import logging
 import asyncio
 import irc3
-from irc3.plugins.command import command
 
 
 logging.basicConfig(filename='bot.log',level=logging.DEBUG)
 
+
 @irc3.plugin
-class AlarmPlugin:
+class SwitchControllerPlugin:
+
+    """
+    Plugin to control RF sockets.
+    """
+
     def __init__(self, bot):
         self.bot = bot
+        module = self.__class__.__module__
+        self.config = bot.config.get(module, {})
+        self.commands = {}
+        for command in self.config['commands']:
+            args = command.split(' ')
+            self.commands[args[0]] = {'id': args[1]}
+            if len(args) == 3:
+                self.commands[args[0]]['value'] = args[2]
 
-    @command
-    def alarm(self, mask, target, args):
-        """Alarm command
-        %%alarm [ARG]
-        """
-        arg = args.get('ARG', None)
-        if arg:
-            logging.info('Starting alarm for {} seconds'.format(arg))
-            # self.bot.notice(mask.nick, 'ALARM ALARM ALARM I {} SEKUNDER!'.format(arg))
-        self.bot.loop.create_task(
-            self.process_maybe_timed_command(
-                target, 1, arg
-            )
-        )
+    @irc3.event((r':(?P<mask>\S+) PRIVMSG (?P<target>\S+) '
+                 r':{re_cmd}(?P<cmd>\w+)(\s(?P<data>\S.*)|$)'))
+    def on_command(self, cmd, mask=None, target=None, client=None, **kwargs):
+        if cmd in self.commands:
+            command_args = self.commands[cmd]
+            command_id = int(command_args.get('id'))
+            value = command_args.get('value', None)
 
-    @command
-    def disco(self, mask, target, args):
-        """Disco command
-        %%disco [ARG]
-        """
-        arg = args.get('ARG', None)
-        if arg:
-            logging.info('Starting alarm for {} seconds'.format(arg))
-            # self.bot.notice(mask.nick, 'DiScO dAsCo I {} SEKUNDER!'.format(arg))
-        self.bot.loop.create_task(
-            self.process_maybe_timed_command(
-                target, 2, arg
-            )
-        )
-
-    @command
-    def love(self, mask, target, args):
-        """Love command
-        %%love [ARG]
-        """
-        arg = args.get('ARG', None)
-        if arg:
-            logging.info('Starting love for {} seconds'.format(arg))
-            # self.bot.notice(mask.nick, 'Så er der kærlighed i {} sekunder!'.format(arg))
-        self.bot.loop.create_task(
-            self.process_maybe_timed_command(
-                target, 4, arg
-            )
-        )
-
-    @command
-    def illuminate(self, mask, target, args):
-        """Illuminate command
-        %%illuminate
-        """
-        self.bot.notice(mask.nick, 'Illuminate!')
-        logging.info('Illuminate')
-        self.bot.loop.create_task(self.send_signal(target, 8, 't'))
-
-    @command
-    def deluminate(self, mask, target, args):
-        """Deluminate command
-        %%deluminate
-        """
-        self.bot.notice(mask.nick, 'Deluminate!')
-        logging.info('Deluminate')
-        self.bot.loop.create_task(self.send_signal(target, 8, 'f'))
+            if value:
+                self.bot.loop.create_task(
+                    self.send_signal(target, command_id, value)
+                )
+            else:
+                arg = kwargs.get('data', None)
+                self.bot.loop.create_task(
+                    self.process_maybe_timed_command(target, command_id, arg)
+                )
 
     @asyncio.coroutine
     def process_maybe_timed_command(self, target, unit, arg=None):
@@ -98,7 +66,17 @@ class AlarmPlugin:
 
     @asyncio.coroutine
     def send_signal(self, target, code_id, state):
-        base_command = 'sudo pilight-send -p elro_800_switch -s 21 -u {} -{}'
-        command = base_command.format(code_id, state)
-        logging.debug('{}: {}: {}'.format(datetime.now(), code_id, command))
-        yield from asyncio.create_subprocess_shell(command, loop=self.bot.loop)
+        switch_command = (
+            'sudo pilight-send -p elro_800_switch -s 21 -u {} -{}'.format(
+                code_id, state
+            )
+        )
+
+        logging.debug(
+            '{}: {}: {}'.format(datetime.now(), code_id, switch_command)
+        )
+
+        yield from asyncio.create_subprocess_shell(
+            switch_command,
+            loop=self.bot.loop
+        )
