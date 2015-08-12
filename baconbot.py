@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 import asyncio
 import irc3
-
+from irc3.plugins.command import command
 
 logging.basicConfig(filename='bot.log',level=logging.DEBUG)
 
@@ -20,9 +20,9 @@ class SwitchControllerPlugin:
         module = self.__class__.__module__
         self.config = bot.config.get(module, {})
         self.commands = {}
-        for command in self.config['commands']:
-            args = command.split(' ')
-            self.commands[args[0]] = {'id': args[1]}
+        for command_args in self.config['commands']:
+            args = command_args.split(' ')
+            self.commands[args[0]] = {'signal': args[1]}
             if len(args) == 3:
                 self.commands[args[0]]['value'] = args[2]
 
@@ -31,17 +31,17 @@ class SwitchControllerPlugin:
     def on_command(self, cmd, mask=None, target=None, client=None, **kwargs):
         if cmd in self.commands:
             command_args = self.commands[cmd]
-            command_id = int(command_args.get('id'))
+            signal = int(command_args.get('signal'))
             value = command_args.get('value', None)
 
             if value:
                 self.bot.loop.create_task(
-                    self.send_signal(target, command_id, value)
+                    self.send_signal(target, signal, value)
                 )
             else:
                 arg = kwargs.get('data', None)
                 self.bot.loop.create_task(
-                    self.process_maybe_timed_command(target, command_id, arg)
+                    self.process_maybe_timed_command(target, signal, arg)
                 )
 
     @asyncio.coroutine
@@ -80,3 +80,29 @@ class SwitchControllerPlugin:
             switch_command,
             loop=self.bot.loop
         )
+
+    @command
+    def switches(self, mask, target, args):
+        """Switches command
+
+        %%switches
+        """
+        self.bot.notice(target, '{:<15}| {:15}| {:<15}'.format(
+            'Command', 'Signal', 'Value'
+        ))
+        for command_name, command_args in self.commands.items():
+            signal = command_args.get('signal', None)
+            value = command_args.get('value', None)
+            if value:
+                message = '{command_name:<15}| {signal:<15}| {value:<15}'.format(
+                    command_name=command_name,
+                    signal=signal,
+                    value=value
+                )
+            else:
+                message = '{command_name:<15}| {signal:<15}|'.format(
+                    command_name=command_name,
+                    signal=signal,
+                )
+
+            self.bot.notice(target, message)
