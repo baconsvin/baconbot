@@ -103,7 +103,6 @@ class SwitchControllerPlugin:
 
             self.bot.notice(target, message)
 
-
     @command
     def setswitch(self, mask, target, args):
         """ Setswitch command
@@ -117,3 +116,12 @@ class SwitchControllerPlugin:
         value = args['<value>']
         if value:
             self.switches[switch_name]['value'] = value
+
+    @command
+    def delswitch(self, mask, target, args):
+        """ Delswitch command
+
+        %%delswitch <switch_name>
+        """
+        switch_name = args['<switch_name>']
+        del self.switches[switch_name]
