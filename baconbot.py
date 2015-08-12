@@ -17,22 +17,18 @@ class SwitchControllerPlugin:
 
     def __init__(self, bot):
         self.bot = bot
-        module = self.__class__.__module__
-        self.config = bot.config.get(module, {})
-        self.commands = {}
-        for command_args in self.config['commands']:
-            args = command_args.split(' ')
-            self.commands[args[0]] = {'signal': args[1]}
-            if len(args) == 3:
-                self.commands[args[0]]['value'] = args[2]
+        self.switches = self.bot.db.get('switches', None)
+        if not self.switches:
+            self.bot.db['switches'] = {}
+            self.switches = self.bot.db['switches']
 
     @irc3.event((r':(?P<mask>\S+) PRIVMSG (?P<target>\S+) '
                  r':{re_cmd}(?P<cmd>\w+)(\s(?P<data>\S.*)|$)'))
     def on_command(self, cmd, mask=None, target=None, client=None, **kwargs):
-        if cmd in self.commands:
-            command_args = self.commands[cmd]
-            signal = int(command_args.get('signal'))
-            value = command_args.get('value', None)
+        if cmd in self.switches:
+            switch_args = self.switches[cmd]
+            signal = int(switch_args.get('signal'))
+            value = switch_args.get('value', None)
 
             if value:
                 self.bot.loop.create_task(
@@ -90,19 +86,34 @@ class SwitchControllerPlugin:
         self.bot.notice(target, '{:<15}| {:15}| {:<15}'.format(
             'Command', 'Signal', 'Value'
         ))
-        for command_name, command_args in self.commands.items():
-            signal = command_args.get('signal', None)
-            value = command_args.get('value', None)
+        for switch_name, switch_args in self.switches.items():
+            signal = switch_args.get('signal', None)
+            value = switch_args.get('value', None)
             if value:
-                message = '{command_name:<15}| {signal:<15}| {value:<15}'.format(
-                    command_name=command_name,
+                message = '{switch_name:<15}| {signal:<15}| {value:<15}'.format(
+                    switch_name=switch_name,
                     signal=signal,
                     value=value
                 )
             else:
-                message = '{command_name:<15}| {signal:<15}|'.format(
-                    command_name=command_name,
+                message = '{switch_name:<15}| {signal:<15}|'.format(
+                    switch_name=switch_name,
                     signal=signal,
                 )
 
             self.bot.notice(target, message)
+
+
+    @command
+    def setswitch(self, mask, target, args):
+        """ Setswitch command
+
+        %%setswitch <switch_name> <signal> [<value>]
+        """
+        switch_name = args['<switch_name>']
+        self.switches[switch_name] = {
+            'signal': args['<signal>']
+        }
+        value = args['<value>']
+        if value:
+            self.switches[switch_name]['value'] = value

@@ -1,0 +1,10 @@
+{
+  "switches": {
+    "alarm": {
+      "signal": "1"
+    },
+    "disco": {
+      "signal": "2"
+    }
+  }
+}
