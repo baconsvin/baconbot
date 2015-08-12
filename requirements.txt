@@ -1,2 +1,2 @@
 irc3==0.8.1
-aiocron=0.3
+aiocron==0.3
