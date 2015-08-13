@@ -1,4 +1,5 @@
 # coding: utf-8
+import re
 from datetime import datetime
 import logging
 import asyncio
@@ -109,13 +110,16 @@ class SwitchControllerPlugin:
 
         %%setswitch <switch_name> <signal> [<value>]
         """
-        switch_name = args['<switch_name>']
-        self.switches[switch_name] = {
-            'signal': args['<signal>']
-        }
-        value = args['<value>']
-        if value:
-            self.switches[switch_name]['value'] = value
+        switch_name = re.sub(r'\W+', '', args['<switch_name>'])
+        signal = int(args['<signal>'])
+        value = args['<value>'] if args['<value>'] in ['t', 'f'] else None
+
+        if switch_name and signal:
+            self.switches[switch_name] = {
+                'signal': signal
+            }
+            if value:
+                self.switches[switch_name]['value'] = value
 
     @command
     def delswitch(self, mask, target, args):
